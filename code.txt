@@ -9,11 +9,6 @@ DATA DIVISION.
         10 array PIC S9.
 PROCEDURE DIVISION.
 
-    hello.
-        DISPLAY 'hello'.
-        EXIT.
-        DISPLAY 'hi'.
-        
     main.
         FUNCTION fact = n => (n < 2)? 1 : n*fact(n-1).
 
@@ -60,4 +55,11 @@ PROCEDURE DIVISION.
         DISPLAY firstAndLast(array).
         PERFORM hello.
         DISPLAY array.
+
+    
+    hello.
+        DISPLAY 'hello'.
+        EXIT.
+        DISPLAY 'hi'.
+    
 END PROGRAM. myProgram

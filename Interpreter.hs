@@ -179,19 +179,34 @@ evaluateDataSection :: DataSection -> Environment -> Evaluated
 evaluateDataSection (DataSection data_declaration) = evaluateDataDeclarations data_declaration
 
 evaluateProcedureSection :: ProcedureSection -> Environment -> Evaluated
-evaluateProcedureSection (SingleParagraph paragraph) env = evaluateParagraph paragraph env
-evaluateProcedureSection (MultiParagraph proc_section paragraph) env =
-                evaluateParagraph paragraph (getEnv $ evaluateProcedureSection proc_section env)
+evaluateProcedureSection procSection env =
+                let updatedEnv = getEnv $ evaluateAllParagraphs procSection env
+                in evaluateMainParagraph procSection updatedEnv
 
 evaluateDataDeclarations :: DataDeclarations -> Environment -> Evaluated
 evaluateDataDeclarations (Declarations data_dec var_dec) env =
                 evaluateVariableDeclaration var_dec (getEnv $ evaluateDataDeclarations data_dec env)
 evaluateDataDeclarations NoDeclaration env = Evaluated NothingValue env
 
+evaluateMainParagraph :: ProcedureSection -> Environment -> Evaluated
+evaluateMainParagraph (SingleParagraph paragraph@(Paragraph name statements)) env = if name == "main" 
+                then evaluateStatements statements env
+                else Evaluated NothingValue env
+evaluateMainParagraph (MultiParagraph proc_section paragraph@(Paragraph name statements)) env =
+                if name == "main"
+                then evaluateStatements statements env
+                else evaluateMainParagraph proc_section env
+
+evaluateAllParagraphs :: ProcedureSection -> Environment -> Evaluated
+evaluateAllParagraphs (SingleParagraph paragraph) env =
+                evaluateParagraph paragraph env
+evaluateAllParagraphs (MultiParagraph proc_section paragraph) env =
+                let val = evaluateAllParagraphs proc_section env
+                in  evaluateParagraph paragraph (getEnv val)
+
 evaluateParagraph :: Paragraph -> Environment -> Evaluated
-evaluateParagraph (Paragraph name statements) env = if name == "main"
-                then evaluateStatements statements (extendEnv env name (ParValue statements))
-                else Evaluated NothingValue (extendEnv env name (ParValue statements))
+evaluateParagraph (Paragraph name statements) env = 
+                Evaluated NothingValue (extendEnv env name (ParValue statements))
 
 -- You should change the below code so if the default value didn't match the datatype,
 -- It gives an error in which the expected datatype and the default value provided for it is specified
@@ -471,6 +486,8 @@ evaluateVariable :: Variable -> Environment -> Evaluated
 evaluateVariable (NormalVariable var) env = Evaluated (searchEnv env var) env
 evaluateVariable (ListVariable var exp) env = Evaluated (listQuery (searchEnv env var) (getValue $ evaluateExpression exp env)) env
 
+
+-- Add extendUpdateEnv to support recursive calls
 evaluateElement :: Element -> Environment -> Evaluated
 evaluateElement (VarElement variable) env = evaluateVariable variable env
 evaluateElement (FunctionElement var exps) env = let func = searchEnv env var
