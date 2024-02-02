@@ -15,6 +15,11 @@ PROCEDURE DIVISION.
         DISPLAY 'hi'.
         
     main.
+        FUNCTION fact = n => (n < 2)? 1 : n*fact(n-1).
+
+        DISPLAY fact(3).
+        DISPLAY fact(4).
+
         FUNCTION func = n => (x < 0)? n*n : n.
 
         DISPLAY func(x).

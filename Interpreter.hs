@@ -476,8 +476,8 @@ evaluateElement (VarElement variable) env = evaluateVariable variable env
 evaluateElement (FunctionElement var exps) env = let func = searchEnv env var
                                                      var_num = (variableCount $ valueToFunctionVariables func)
                                                      exp_num = expressionCount exps in
-                if var_num == exp_num then evaluateExpression (valueToFunctionOutput func) (appendExpressions
-                env (valueToFunctionEnvironment func) (valueToFunctionVariables func) exps)
+                if var_num == exp_num then evaluateExpression (valueToFunctionOutput func) (extendUpdateEnv (appendExpressions
+                env (valueToFunctionEnvironment func) (valueToFunctionVariables func) exps) var func)
                 else error ("Function " ++ var ++ " needs " ++ show var_num ++ " arguments but " ++ show exp_num ++ " are provided!")
 evaluateElement (ValueElement (StringValue x)) env = Evaluated (StrValue x) env
 evaluateElement (ValueElement (NumberValue x)) env = Evaluated (NumValue x) env
