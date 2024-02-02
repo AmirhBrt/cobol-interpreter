@@ -10,6 +10,31 @@ data Evaluated
     = Evaluated Value Environment
     deriving Show;
 
+-------------------------------------------
+--------------- ADDED CODE ----------------
+
+checkValueTypeEquality :: Value -> Value -> Bool
+checkValueTypeEquality (NumValue x) (NumValue y)   = True
+checkValueTypeEquality (StrValue x) (StrValue y)   = True
+checkValueTypeEquality (StrList x1 x2) (StrList y1 y2)     = True
+checkValueTypeEquality (NumList x1 x2) (NumList y1 y2)     = True
+checkValueTypeEquality (CondValue x) (CondValue y) = True
+checkValueTypeEquality exp1 exp2                   = False
+
+valueToTypeFormat :: Value -> String
+valueToTypeFormat (StrValue x) = "String"
+valueToTypeFormat (NumValue x) = "Number"
+valueToTypeFormat (StrList n l) = "[String]"
+valueToTypeFormat (NumList n l) = "[Number]"
+valueToTypeFormat (ParValue stmst) = "Paragraph"
+valueToTypeFormat (FunValue vars exp env) = "Function"
+valueToTypeFormat (CondValue x) = "Boolean"
+valueToTypeFormat (NothingValue) = "Null"
+valueToTypeFormat (EXIT_VALUE) = "EXIT"
+
+--------------- ADDED CODE ----------------
+-------------------------------------------
+
 valueToString :: Value -> String
 valueToString (StrValue x) = x
 valueToString (NumValue x) = show x
@@ -63,6 +88,7 @@ expressionCount (MultiExpressions exps exp) = 1 + (expressionCount exps)
 addValues :: Value -> Value -> Value
 addValues (NumValue x) (NumValue y) = NumValue (x + y)
 addValues (StrValue x) (StrValue y) = StrValue (x ++ y)
+addValues x y = error("Can not add values of type " ++ valueToTypeFormat x ++ " and " ++ valueToTypeFormat y ++ " to each other!")
 -- TODO: WRITE YOUR CODE HERE
 
 concatLists :: Value -> Value -> Value
@@ -73,30 +99,36 @@ concatLists (NumList x1 y1) (NumList x2 y2) = NumList (x1 + x2) (y1 ++ y2)
 -- It gives an error in which the datatypes of the two variables are specified
 subtractValues :: Value -> Value -> Value
 subtractValues (NumValue x) (NumValue y) = NumValue(x - y)
+subtractValues x y = error("Can not subtract values of type " ++ valueToTypeFormat x ++ " and " ++ valueToTypeFormat y ++ " from each other!")
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the function so if there are values with different types,
 -- It gives an error in which the datatypes of the two variables are specified
 multiplyValues :: Value -> Value -> Value
 multiplyValues (NumValue x) (NumValue y) = NumValue (x * y)
+multiplyValues x y = error("Can not multiply values of type " ++ valueToTypeFormat x ++ " and " ++ valueToTypeFormat y ++ " by each other!")
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the function so if there are values with different types,
 -- It gives an error in which the datatypes of the two variables are specified
 divideValues :: Value -> Value -> Value
 divideValues (NumValue x) (NumValue y) = NumValue (x / y)
+divideValues x y = error("Can not divide values of type " ++ valueToTypeFormat x ++ " and " ++ valueToTypeFormat y ++ " by each other!")
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the function so if there are values with different types,
 -- It gives an error in which the datatypes of the two variables are specified
 modValues :: Value -> Value -> Value
 modValues (NumValue x) (NumValue y) = NumValue (x - (y * fromIntegral (floor (x / y))))
+modValues x y = error("Can get mod from values of type " ++ valueToTypeFormat x ++ " and " ++ valueToTypeFormat y)
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the function so if there are values with different types,
 -- It gives an error in which the datatypes of the two variables are specified
 logicalOperationOnValues :: (Bool -> Bool -> Bool) -> Value -> Value -> Value
 logicalOperationOnValues op (CondValue x) (CondValue y) = CondValue (op x y)
+logicalOperationOnValues _ x y = 
+    error("Can not perform logical operation on values of type " ++ valueToTypeFormat x ++ " and " ++ valueToTypeFormat y)
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the function so if the index is not a number or the first value is not a list,
@@ -114,6 +146,9 @@ listQuery (NumList n (x:xs)) (NumValue k) = if (k < fromIntegral n) && (k >= 0) 
                                                     else listQuery (NumList (n-1) xs) (NumValue (k-1))
                                                 else error ("Index of a list cannot be " ++ show k ++ " becuase it's not an integer!")
                                             else error ("Index " ++ (show $ floor k) ++ " is out of bound for list with length " ++ show n ++ "!")
+listQuery (NumList n (x:xs)) k = error("Index must be of type Number. Current type of index is " ++ valueToTypeFormat k ++ "!")
+listQuery (StrList n (x:xs)) k = error("Index must be of type Number. Current type of index is " ++ valueToTypeFormat k ++ "!")
+listQuery x _ = error("Cannot perform any list query on type " ++ valueToTypeFormat x ++ "!")
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the function so if the updated value is not matched with list datatype,
@@ -133,20 +168,36 @@ listChange (NumList n (x:xs)) (NumValue k) (NumValue y) = if (k < fromIntegral n
                                                                 (listChange (NumList (n-1) xs) (NumValue (k-1)) (NumValue y))
                                                             else error ("Index of a list cannot be " ++ show k ++ " becuase it's not an integer!")
                                                         else error ("Index " ++ (show $ floor k) ++ " is out of bound for list with length " ++ show n ++ "!")
+listChange (NumList n (x:xs)) k y = error("Index must be of type Number. Current type of index is " ++ valueToTypeFormat k ++ "!")
+listChange (StrList n (x:xs)) k y = error("Index must be of type Number. Current type of index is " ++ valueToTypeFormat k ++ "!")
+listChange x _ _ = error("Cannot perform any list query on type " ++ valueToTypeFormat x ++ "!")
+
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the function so if one of expressions have different datatype than the others,
 -- It gives an error in which the expected datatype and the value of the expression is specified
 sumOfExpressions :: Expressions -> Environment -> Value
-sumOfExpressions (SingleExpression exp) env = getValue $ evaluateExpression exp env
-sumOfExpressions (MultiExpressions exps exp) env = addValues (sumOfExpressions exps env) (getValue $ evaluateExpression exp env)
+sumOfExpressions (SingleExpression exp) env = 
+                    getValue $ evaluateExpression exp env
+sumOfExpressions (MultiExpressions exps exp) env = 
+                    let first = (sumOfExpressions exps env)
+                        last = (getValue $ evaluateExpression exp env) in 
+                            if checkValueTypeEquality first last
+                            then addValues first last
+                            else error ("Can not add values of type " ++ valueToTypeFormat first ++ " and " ++ valueToTypeFormat last ++ " to each other!")
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the function so if one of expressions have different datatype than the others,
 -- It gives an error in which the expected datatype and the value of the expression is specified
 productOfExpressions :: Expressions -> Environment -> Value
-productOfExpressions (SingleExpression exp) env = getValue $ evaluateExpression exp env
-productOfExpressions (MultiExpressions exps exp) env = multiplyValues (productOfExpressions exps env) (getValue $ evaluateExpression exp env)
+productOfExpressions (SingleExpression exp) env = 
+                    getValue $ evaluateExpression exp env
+productOfExpressions (MultiExpressions exps exp) env = 
+                    let first = (productOfExpressions exps env)
+                        last = (getValue $ evaluateExpression exp env) in 
+                            if checkValueTypeEquality first last 
+                            then multiplyValues first last
+                            else error ("Can not multiply values of type " ++ valueToTypeFormat first ++ " and " ++ valueToTypeFormat last ++ " by each other!")
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the below code so it can accept programs without a data division
@@ -157,7 +208,10 @@ evaluateProgram (TypedProgram id_div data_div proc_div end) env =
                 evaluateEndStatement end (getEnv $
                 evaluateIdentificationDivision id_div env)))
 evaluateProgram (NoneTypeProgram id_div proc_div end) env =
-                Evaluated NothingValue env -- TODO: WRITE YOUR CODE HERE
+                evaluateProcedureDivision proc_div (getEnv $
+                evaluateEndStatement end (getEnv $
+                evaluateIdentificationDivision id_div env))
+-- TODO: WRITE YOUR CODE HERE
 
 evaluateIdentificationDivision :: IdentificationDivision -> Environment -> Evaluated
 evaluateIdentificationDivision (IdentificationDivision name) env =
@@ -188,6 +242,9 @@ evaluateDataDeclarations (Declarations data_dec var_dec) env =
                 evaluateVariableDeclaration var_dec (getEnv $ evaluateDataDeclarations data_dec env)
 evaluateDataDeclarations NoDeclaration env = Evaluated NothingValue env
 
+-------------------------------------------
+--------------- ADDED CODE ----------------
+
 evaluateMainParagraph :: ProcedureSection -> Environment -> Evaluated
 evaluateMainParagraph (SingleParagraph paragraph@(Paragraph name statements)) env = if name == "main" 
                 then evaluateStatements statements env
@@ -204,6 +261,9 @@ evaluateAllParagraphs (MultiParagraph proc_section paragraph) env =
                 let val = evaluateAllParagraphs proc_section env
                 in  evaluateParagraph paragraph (getEnv val)
 
+--------------- ADDED CODE ----------------
+-------------------------------------------
+
 evaluateParagraph :: Paragraph -> Environment -> Evaluated
 evaluateParagraph (Paragraph name statements) env = 
                 Evaluated NothingValue (extendEnv env name (ParValue statements))
@@ -211,26 +271,43 @@ evaluateParagraph (Paragraph name statements) env =
 -- You should change the below code so if the default value didn't match the datatype,
 -- It gives an error in which the expected datatype and the default value provided for it is specified
 evaluateVariableDeclaration :: VariableDeclaration -> Environment -> Evaluated
-evaluateVariableDeclaration (VarDeclaration 0 name SignedNumber NoDefault) env = error ("Size of the variable " ++ name ++ " cannot be zero!")
+evaluateVariableDeclaration (VarDeclaration 0 name SignedNumber NoDefault) env = 
+                error ("Size of the variable " ++ name ++ " cannot be zero!")
 evaluateVariableDeclaration (VarDeclaration 1 name SignedNumber NoDefault) env =
                 Evaluated NothingValue (extendEnv env name (NumValue 0))
 evaluateVariableDeclaration (VarDeclaration size name SignedNumber NoDefault) env =
                 Evaluated NothingValue (extendEnv env name (NumList size (floatList size 0)))
-evaluateVariableDeclaration (VarDeclaration 0 name SignedNumber (HasDefault exp)) env = error ("Size of the variable " ++ name ++ " cannot be zero!")
+evaluateVariableDeclaration (VarDeclaration 0 name SignedNumber (HasDefault exp)) env = 
+                error ("Size of the variable " ++ name ++ " cannot be zero!")
 evaluateVariableDeclaration (VarDeclaration 1 name SignedNumber (HasDefault exp)) env =
-                Evaluated NothingValue (extendEnv env name (getValue $ evaluateExpression exp env))
+                let eval = getValue $ evaluateExpression exp env in
+                    if "Number" == valueToTypeFormat eval
+                    then Evaluated NothingValue (extendEnv env name eval)
+                    else error ("Expected number value but received " ++ valueToTypeFormat eval ++ " instead!")
+                Evaluated NothingValue (extendEnv env name eval)
 evaluateVariableDeclaration (VarDeclaration size name SignedNumber (HasDefault exp)) env =
-                Evaluated NothingValue (extendEnv env name (NumList size (floatList size (valueToNumber $ getValue $ evaluateExpression exp env))))
-evaluateVariableDeclaration (VarDeclaration 0 name AlphanumericString NoDefault) env = error ("Size of the variable " ++ name ++ " cannot be zero!")
+                let eval = getValue $ evaluateExpression exp env in
+                    if "Number" == valueToTypeFormat eval
+                    then Evaluated NothingValue (extendEnv env name (NumList size (floatList size (valueToNumber $ eval))))
+                    else error ("Expected number value but received " ++ valueToTypeFormat eval ++ " instead!")
+evaluateVariableDeclaration (VarDeclaration 0 name AlphanumericString NoDefault) env = 
+                error ("Size of the variable " ++ name ++ " cannot be zero!")
 evaluateVariableDeclaration (VarDeclaration 1 name AlphanumericString NoDefault) env =
                 Evaluated NothingValue (extendEnv env name (StrValue ""))
 evaluateVariableDeclaration (VarDeclaration size name AlphanumericString NoDefault) env =
                 Evaluated NothingValue (extendEnv env name (StrList size (stringList size "")))
-evaluateVariableDeclaration (VarDeclaration 0 name AlphanumericString (HasDefault exp)) env = error ("Size of the variable " ++ name ++ " cannot be zero!")
+evaluateVariableDeclaration (VarDeclaration 0 name AlphanumericString (HasDefault exp)) env = 
+                error ("Size of the variable " ++ name ++ " cannot be zero!")
 evaluateVariableDeclaration (VarDeclaration 1 name AlphanumericString (HasDefault exp)) env =
-                Evaluated NothingValue (extendEnv env name (getValue $ evaluateExpression exp env))
+                let eval = getValue $ evaluateExpression exp env in
+                    if "String" == valueToTypeFormat eval
+                    then Evaluated NothingValue (extendEnv env name eval)
+                    else error ("Expected string value but received " ++ valueToTypeFormat eval ++ " instead!")
 evaluateVariableDeclaration (VarDeclaration size name AlphanumericString (HasDefault exp)) env =
-                Evaluated NothingValue (extendEnv env name (StrList size (stringList size (valueToString $ getValue $ evaluateExpression exp env))))
+                let eval = getValue $ evaluateExpression exp env in 
+                    if "String" == valueToTypeFormat eval 
+                    then Evaluated NothingValue (extendEnv env name (StrList size (stringList size (valueToString $ eval))))
+                    else error ("Expected string value but received " ++ valueToTypeFormat eval ++ " instead!")
 -- TODO: WRITE YOUR CODE HERE
 
 evaluateStatements :: Statements -> Environment -> Evaluated
@@ -251,15 +328,34 @@ evaluateStatement ExitStatement env = Evaluated EXIT_VALUE env
 -- You should change the below code so if the expression doesn't match all of the variables datatypes,
 -- It gives an error in which the first mismatched variable with the expression datatype is specified
 evaluateMoveStatement :: MoveStatement -> Environment -> Evaluated
-evaluateMoveStatement (Move exp (SingleVariable (NormalVariable var))) env = Evaluated NothingValue
-                (updateEnv env var (getValue $ evaluateExpression exp env))
-evaluateMoveStatement (Move exp (SingleVariable (ListVariable var expr))) env = let idx = (getValue $ evaluateExpression expr env) in
-                Evaluated NothingValue (updateEnv env var (listChange (searchEnv env var) idx (getValue $ evaluateExpression exp env)))
-evaluateMoveStatement (Move exp (MultiVariables vars (NormalVariable var))) env = Evaluated NothingValue (updateEnv
-                (getEnv $ evaluateMoveStatement (Move exp vars) env) var (getValue $ evaluateExpression exp env))
-evaluateMoveStatement (Move exp (MultiVariables vars (ListVariable var expr))) env = let idx = (getValue $ evaluateExpression expr env) in
-                Evaluated NothingValue (updateEnv (getEnv $ evaluateMoveStatement (Move exp vars) env) var (listChange
-                (searchEnv env var) idx (getValue $ evaluateExpression exp env)))
+evaluateMoveStatement (Move exp (SingleVariable (NormalVariable var))) env = 
+                let newVal = (getValue $ evaluateExpression exp env)
+                    preVal = (searchEnv env var) in
+                    if checkValueTypeEquality preVal newVal
+                    then Evaluated NothingValue (updateEnv env var newVal)
+                    else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateMoveStatement (Move exp (SingleVariable (ListVariable var expr))) env = 
+                let idx = (getValue $ evaluateExpression expr env) in
+                let newVal = (listChange (searchEnv env var) idx (getValue $ evaluateExpression exp env))
+                    preVal = (searchEnv env var) in
+                    if checkValueTypeEquality preVal newVal
+                    then Evaluated NothingValue (updateEnv env var newVal)
+                    else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateMoveStatement (Move exp (MultiVariables vars (NormalVariable var))) env = 
+                let newVal = (getValue $ evaluateExpression exp env) 
+                    updatedEnv = (getEnv $ evaluateMoveStatement (Move exp vars) env) in
+                        let preVal = (searchEnv updatedEnv var) in
+                        if checkValueTypeEquality preVal newVal
+                        then Evaluated NothingValue (updateEnv updatedEnv var newVal)
+                        else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateMoveStatement (Move exp (MultiVariables vars (ListVariable var expr))) env =
+                let idx = (getValue $ evaluateExpression expr env) in
+                let newVal = (listChange (searchEnv env var) idx (getValue $ evaluateExpression exp env))
+                    updatedEnv = (getEnv $ evaluateMoveStatement (Move exp vars) env) in
+                    let preVal = (searchEnv updatedEnv var) in
+                        if checkValueTypeEquality preVal newVal
+                        then Evaluated NothingValue (updateEnv updatedEnv var newVal)
+                        else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
 -- TODO: WRITE YOUR CODE HERE
 
 evaluateArithmeticStatement :: ArithmeticStatement -> Environment -> Evaluated
@@ -271,71 +367,156 @@ evaluateArithmeticStatement (DivisionStatement divide) env = evaluateDivStatemen
 -- You should change the below code so if the expressions datatypes is mismatched with variable datatype,
 -- It gives an error in which the first mismatched expression with the variable datatype is specified
 evaluateAddStatment :: AddStatement -> Environment -> Evaluated
-evaluateAddStatment (SingleAdd exp (NormalVariable var)) env = Evaluated NothingValue
-                (updateEnv env var (addValues (searchEnv env var) (getValue $ evaluateExpression exp env)))
-evaluateAddStatment (SingleAdd exp (ListVariable var expr)) env = let idx = (getValue $ evaluateExpression expr env) in
-                Evaluated NothingValue (updateEnv env var (listChange (searchEnv env var) idx
-                (addValues (listQuery (searchEnv env var) idx) (getValue $ evaluateExpression exp env))))
-evaluateAddStatment (MultiAdd exps (NormalVariable var)) env = Evaluated NothingValue (updateEnv env var (sumOfExpressions exps env))
-evaluateAddStatment (MultiAdd exps (ListVariable var expr)) env = let idx = (getValue $ evaluateExpression expr env) in
-                Evaluated NothingValue (updateEnv env var (listChange (searchEnv env var) idx (sumOfExpressions exps env)))
+evaluateAddStatment (SingleAdd exp (NormalVariable var)) env = 
+                let preVal = (searchEnv env var)
+                    newVal = (addValues (searchEnv env var) (getValue $ evaluateExpression exp env)) in
+                if checkValueTypeEquality preVal newVal
+                then Evaluated NothingValue (updateEnv env var newVal)
+                else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateAddStatment (SingleAdd exp (ListVariable var expr)) env = 
+                let idx = (getValue $ evaluateExpression expr env) in
+                let preVal = (searchEnv env var) 
+                    newVal = (listChange (searchEnv env var) idx (addValues (listQuery (searchEnv env var) idx) (getValue $ evaluateExpression exp env))) in
+                    if checkValueTypeEquality preVal newVal
+                    then Evaluated NothingValue (updateEnv env var newVal)
+                    else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateAddStatment (MultiAdd exps (NormalVariable var)) env = 
+                let preVal = (searchEnv env var)
+                    newVal = (sumOfExpressions exps env) in
+                    if checkValueTypeEquality preVal newVal
+                    then Evaluated NothingValue (updateEnv env var newVal)
+                    else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateAddStatment (MultiAdd exps (ListVariable var expr)) env = 
+                let idx = (getValue $ evaluateExpression expr env) in
+                let preVal = (searchEnv env var)
+                    newVal = (listChange (searchEnv env var) idx (sumOfExpressions exps env)) in
+                    if checkValueTypeEquality newVal preVal
+                    then Evaluated NothingValue (updateEnv env var newVal)
+                    else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the below code so if the expressions datatypes is mismatched with variable datatype,
 -- It gives an error in which the first mismatched expression with the variable datatype is specified
 evaluateSubStatement :: SubStatement -> Environment -> Evaluated
-evaluateSubStatement (SingleSubtract exps exp (NormalVariable var)) env = Evaluated NothingValue (updateEnv env var (subtractValues
-                (getValue $ evaluateExpression exp env) (sumOfExpressions exps env)))
-evaluateSubStatement (SingleSubtract exps exp (ListVariable var expr)) env = let idx = (getValue $ evaluateExpression expr env) in
-                Evaluated NothingValue (updateEnv env var (listChange (searchEnv env var) idx
-                (subtractValues (getValue $ evaluateExpression exp env) (sumOfExpressions exps env))))
-evaluateSubStatement (MultiSubtract exps (NormalVariable var)) env = Evaluated NothingValue (updateEnv env var (subtractValues
-                (searchEnv env var) (sumOfExpressions exps env)))
-evaluateSubStatement (MultiSubtract exps (ListVariable var expr)) env = let idx = (getValue $ evaluateExpression expr env) in
-                Evaluated NothingValue (updateEnv env var (listChange (searchEnv env var) idx
-                (subtractValues (listQuery (searchEnv env var) idx) (sumOfExpressions exps env))))
+evaluateSubStatement (SingleSubtract exps exp (NormalVariable var)) env = 
+                let preVal = (searchEnv env var)
+                    newVal = (subtractValues (getValue $ evaluateExpression exp env) (sumOfExpressions exps env)) in
+                    if checkValueTypeEquality preVal newVal
+                    then Evaluated NothingValue (updateEnv env var newVal)
+                    else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateSubStatement (SingleSubtract exps exp (ListVariable var expr)) env = 
+                let idx = (getValue $ evaluateExpression expr env) in
+                    let preVal = (searchEnv env var)
+                        newVal = (listChange (searchEnv env var) idx (subtractValues (getValue $ evaluateExpression exp env) (sumOfExpressions exps env))) in
+                        if checkValueTypeEquality preVal newVal
+                        then Evaluated NothingValue (updateEnv env var newVal)
+                        else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateSubStatement (MultiSubtract exps (NormalVariable var)) env = 
+                let preVal = (searchEnv env var)
+                    newVal = (subtractValues (searchEnv env var) (sumOfExpressions exps env)) in
+                    if checkValueTypeEquality preVal newVal
+                    then Evaluated NothingValue (updateEnv env var newVal)
+                    else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateSubStatement (MultiSubtract exps (ListVariable var expr)) env = 
+                let idx = (getValue $ evaluateExpression expr env) in
+                    let preVal = (searchEnv env var)
+                        newVal = (listChange (searchEnv env var) idx (subtractValues (listQuery (searchEnv env var) idx) (sumOfExpressions exps env))) in
+                        if checkValueTypeEquality preVal newVal
+                        then Evaluated NothingValue (updateEnv env var newVal)
+                        else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the below code so if the expressions datatypes is mismatched with variable datatype,
 -- It gives an error in which the first mismatched expression with the variable datatype is specified
 evaluateMultStatement :: MultStatement -> Environment -> Evaluated
-evaluateMultStatement (MultiplyTo exp (NormalVariable var)) env = Evaluated NothingValue (updateEnv env var (multiplyValues
-                (searchEnv env var) (getValue $ evaluateExpression exp env)))
-evaluateMultStatement (MultiplyTo exp (ListVariable var expr)) env = let idx = (getValue $ evaluateExpression expr env) in
-                Evaluated NothingValue (updateEnv env var (listChange (searchEnv env var) idx
-                (multiplyValues (listQuery (searchEnv env var) idx) (getValue $ evaluateExpression exp env))))
-evaluateMultStatement (MultiplyGiving exps (NormalVariable var)) env = Evaluated NothingValue (updateEnv env var (productOfExpressions exps env))
-evaluateMultStatement (MultiplyGiving exps (ListVariable var expr)) env = let idx = (getValue $ evaluateExpression expr env) in
-                Evaluated NothingValue (updateEnv env var (listChange (searchEnv env var) idx (productOfExpressions exps env)))
+evaluateMultStatement (MultiplyTo exp (NormalVariable var)) env = 
+                let preVal = (searchEnv env var)
+                    newVal = (multiplyValues (searchEnv env var) (getValue $ evaluateExpression exp env)) in
+                    if checkValueTypeEquality preVal newVal
+                    then Evaluated NothingValue (updateEnv env var newVal)
+                    else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateMultStatement (MultiplyTo exp (ListVariable var expr)) env = 
+                let idx = (getValue $ evaluateExpression expr env) in
+                    let preVal = (searchEnv env var)
+                        newVal = (listChange (searchEnv env var) idx (multiplyValues (listQuery (searchEnv env var) idx) (getValue $ evaluateExpression exp env))) in
+                        if checkValueTypeEquality preVal newVal
+                        then Evaluated NothingValue (updateEnv env var newVal)
+                        else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateMultStatement (MultiplyGiving exps (NormalVariable var)) env = 
+                let preVal = (searchEnv env var)
+                    newVal = (productOfExpressions exps env) in
+                    if checkValueTypeEquality preVal newVal
+                    then Evaluated NothingValue (updateEnv env var newVal)
+                    else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateMultStatement (MultiplyGiving exps (ListVariable var expr)) env = 
+                let idx = (getValue $ evaluateExpression expr env) in
+                    let preVal = (searchEnv env var)
+                        newVal = (listChange (searchEnv env var) idx (productOfExpressions exps env)) in
+                        if checkValueTypeEquality preVal newVal
+                        then Evaluated NothingValue (updateEnv env var newVal)
+                        else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the below code so if the expressions datatypes is mismatched with variable datatype,
 -- It gives an error in which the first mismatched expression with the variable datatype is specified
 evaluateDivStatement :: DivStatement -> Environment -> Evaluated
-evaluateDivStatement (DivideInto exp (NormalVariable var)) env = Evaluated NothingValue (updateEnv env var (divideValues
-                (searchEnv env var) (getValue $ evaluateExpression exp env)))
-evaluateDivStatement (DivideInto exp (ListVariable var expr)) env = let idx = (getValue $ evaluateExpression expr env) in
-                Evaluated NothingValue (updateEnv env var (listChange (searchEnv env var) idx
-                (divideValues (listQuery (searchEnv env var) idx) (getValue $ evaluateExpression exp env))))
-evaluateDivStatement (DivideGiving exp1 exp2 (NormalVariable var)) env = Evaluated NothingValue (updateEnv env var (divideValues
-                (getValue $ evaluateExpression exp2 env) (getValue $ evaluateExpression exp1 env)))
-evaluateDivStatement (DivideGiving exp1 exp2 (ListVariable var expr)) env = let idx = (getValue $ evaluateExpression expr env) in
-                Evaluated NothingValue (updateEnv env var (listChange (searchEnv env var) idx
-                (divideValues (getValue $ evaluateExpression exp2 env) (getValue $ evaluateExpression exp1 env))))
-evaluateDivStatement (DivideRemainder exp1 exp2 (NormalVariable var)) env = Evaluated NothingValue (updateEnv env var (modValues
-                (getValue $ evaluateExpression exp2 env) (getValue $ evaluateExpression exp1 env)))
-evaluateDivStatement (DivideRemainder exp1 exp2 (ListVariable var expr)) env = let idx = (getValue $ evaluateExpression expr env) in
-                Evaluated NothingValue (updateEnv env var (listChange (searchEnv env var) idx
-                (modValues (getValue $ evaluateExpression exp2 env) (getValue $ evaluateExpression exp1 env))))
+evaluateDivStatement (DivideInto exp (NormalVariable var)) env = 
+                let preVal = (searchEnv env var)
+                    newVal = (divideValues (searchEnv env var) (getValue $ evaluateExpression exp env)) in
+                    if checkValueTypeEquality preVal newVal
+                    then Evaluated NothingValue (updateEnv env var newVal)
+                    else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateDivStatement (DivideInto exp (ListVariable var expr)) env = 
+                let idx = (getValue $ evaluateExpression expr env) in
+                let preVal = (searchEnv env var)
+                    newVal = (listChange (searchEnv env var) idx (divideValues (listQuery (searchEnv env var) idx) (getValue $ evaluateExpression exp env))) in
+                    if checkValueTypeEquality preVal newVal
+                    then Evaluated NothingValue (updateEnv env var newVal)
+                    else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateDivStatement (DivideGiving exp1 exp2 (NormalVariable var)) env = 
+                let preVal = (searchEnv env var)
+                    newVal = (divideValues (getValue $ evaluateExpression exp2 env) (getValue $ evaluateExpression exp1 env)) in
+                    if checkValueTypeEquality preVal newVal
+                    then Evaluated NothingValue (updateEnv env var newVal)
+                    else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateDivStatement (DivideGiving exp1 exp2 (ListVariable var expr)) env = 
+                let idx = (getValue $ evaluateExpression expr env) in
+                    let preVal = (searchEnv env var)
+                        newVal = (listChange (searchEnv env var) idx (divideValues (getValue $ evaluateExpression exp2 env) (getValue $ evaluateExpression exp1 env))) in 
+                    if checkValueTypeEquality preVal newVal
+                    then Evaluated NothingValue (updateEnv env var newVal)
+                    else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateDivStatement (DivideRemainder exp1 exp2 (NormalVariable var)) env = 
+                let preVal = (searchEnv env var)
+                    newVal = (modValues (getValue $ evaluateExpression exp2 env) (getValue $ evaluateExpression exp1 env)) in
+                    if checkValueTypeEquality preVal newVal
+                    then Evaluated NothingValue (updateEnv env var newVal)
+                    else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateDivStatement (DivideRemainder exp1 exp2 (ListVariable var expr)) env = 
+                let idx = (getValue $ evaluateExpression expr env) in
+                    let preVal = (searchEnv env var)
+                        newVal = (listChange (searchEnv env var) idx (modValues (getValue $ evaluateExpression exp2 env) (getValue $ evaluateExpression exp1 env))) in
+                        if checkValueTypeEquality preVal newVal
+                        then Evaluated NothingValue (updateEnv env var newVal)
+                        else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the below code so if the expression datatype doesn't match the variable datatype,
 -- It gives an error in which the datatype of the variable and the expression is specified
 evaluateComputeStatement :: ComputeStatement -> Environment -> Evaluated
-evaluateComputeStatement (ComputeStatement (NormalVariable var) exp) env = Evaluated NothingValue
-                (updateEnv env var (getValue $ evaluateExpression exp env))
-evaluateComputeStatement (ComputeStatement (ListVariable var expr) exp) env = let idx = (getValue $ evaluateExpression expr env) in
-                Evaluated NothingValue (updateEnv env var (listChange (searchEnv env var) idx (getValue $ evaluateExpression exp env)))
+evaluateComputeStatement (ComputeStatement (NormalVariable var) exp) env = 
+                let preVal = (searchEnv env var)
+                    newVal = (getValue $ evaluateExpression exp env) in
+                    if checkValueTypeEquality preVal newVal
+                    then Evaluated NothingValue (updateEnv env var newVal)
+                    else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
+evaluateComputeStatement (ComputeStatement (ListVariable var expr) exp) env = 
+                let idx = (getValue $ evaluateExpression expr env) in
+                    let preVal = (searchEnv env var)
+                        newVal = (listChange (searchEnv env var) idx (getValue $ evaluateExpression exp env)) in 
+                        if checkValueTypeEquality preVal newVal
+                        then Evaluated NothingValue (updateEnv env var newVal)
+                        else error ("Cannot change a pre-declared variable " ++ show var ++ " with type " ++ valueToTypeFormat preVal ++ " to a new value with type " ++ valueToTypeFormat newVal ++ "!")
 -- TODO: WRITE YOUR CODE HERE
 
 evaluateIfStatement :: IfStatement -> Environment -> Evaluated
@@ -353,8 +534,6 @@ performHelper var val1 val2 val3 statements env = if val1 < val2
                     else performHelper var (addValues val1 val3) val2 val3 statements (getEnv eval)
                 else Evaluated NothingValue env
 
--- You should change the below code so if the expression datatype is not a number,
--- It gives an error in which the expressions value is specified
 evaluatePerformStatement :: PerformStatement -> Environment -> Evaluated
 evaluatePerformStatement (ConditionalPerform condition statements) env = if (getValue $ evaluateDisjunction condition env) == CondValue True
                 then let eval = evaluateStatements statements env in
@@ -371,7 +550,6 @@ evaluatePerformStatement (RangePerform var exp1 exp2 HasNoStep statements) env =
 evaluatePerformStatement (ParagraphPerform var) env = let eval = evaluateStatements (valueToParagraphStatements (searchEnv env var)) env in
                                                                 if getValue eval == EXIT_VALUE then Evaluated NothingValue (getEnv eval)
                                                                 else eval
--- TODO: WRITE YOUR CODE HERE
 
 evaluateFunctionStatement :: FunctionStatement -> Environment -> Evaluated
 evaluateFunctionStatement (FunctionStatement var vars exp) env = Evaluated NothingValue (extendEnv env var (FunValue vars exp env))
@@ -408,61 +586,97 @@ evaluateComparison (GreaterThanOrEqualComparison uneq) env = evaluateUnequality 
 -- You should change the below code so if the two expressions had different datatypes,
 -- It gives an error in which the value of the expressions is specified
 evaluateEquality :: Equality -> Environment -> Evaluated
-evaluateEquality (IsEq exp1 exp2) env = let val1 = (getValue $ evaluateExpression exp1 env)
-                                            val2 = (getValue $ evaluateExpression exp2 env) in
-                Evaluated (CondValue (val1 == val2)) env
-evaluateEquality (IsNotEq exp1 exp2) env = let val1 = (getValue $ evaluateExpression exp1 env)
-                                               val2 = (getValue $ evaluateExpression exp2 env) in
-                Evaluated (CondValue (val1 /= val2)) env
+evaluateEquality (IsEq exp1 exp2) env = 
+                    let val1 = (getValue $ evaluateExpression exp1 env)
+                        val2 = (getValue $ evaluateExpression exp2 env) in
+                        if checkValueTypeEquality val1 val2 
+                        then Evaluated (CondValue (val1 == val2)) env
+                        else error ("Cannot compare value with type " ++ valueToTypeFormat val1 ++ " to type " ++ valueToTypeFormat val2 ++ "!")
+evaluateEquality (IsNotEq exp1 exp2) env = 
+                    let val1 = (getValue $ evaluateExpression exp1 env)
+                        val2 = (getValue $ evaluateExpression exp2 env) in
+                        if checkValueTypeEquality val1 val2 
+                        then Evaluated (CondValue (val1 /= val2)) env
+                        else error ("Cannot compare value with type " ++ valueToTypeFormat val1 ++ " to type " ++ valueToTypeFormat val2 ++ "!")
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the below code so if the two expressions had different datatypes,
 -- It gives an error in which the value of the expressions is specified
 evaluateUnequality :: Unequality -> Environment -> Evaluated
-evaluateUnequality (IsLessThan exp1 exp2) env = let val1 = (getValue $ evaluateExpression exp1 env)
-                                                    val2 = (getValue $ evaluateExpression exp2 env) in
-                Evaluated (CondValue (val1 < val2)) env
-evaluateUnequality (IsLessThanOrEqual exp1 exp2) env = let val1 = (getValue $ evaluateExpression exp1 env)
-                                                           val2 = (getValue $ evaluateExpression exp2 env) in
-                Evaluated (CondValue (val1 <= val2)) env
-evaluateUnequality (IsGreaterThan exp1 exp2) env = let val1 = (getValue $ evaluateExpression exp1 env)
-                                                       val2 = (getValue $ evaluateExpression exp2 env) in
-                Evaluated (CondValue (val1 > val2)) env
-evaluateUnequality (IsGreaterThanOrEqual exp1 exp2) env = let val1 = (getValue $ evaluateExpression exp1 env)
-                                                              val2 = (getValue $ evaluateExpression exp2 env) in
-                Evaluated (CondValue (val1 >= val2)) env
+evaluateUnequality (IsLessThan exp1 exp2) env = 
+                    let val1 = (getValue $ evaluateExpression exp1 env)
+                        val2 = (getValue $ evaluateExpression exp2 env) in
+                        if checkValueTypeEquality val1 val2
+                        then Evaluated (CondValue (val1 < val2)) env
+                        else error ("Cannot compare value with type " ++ valueToTypeFormat val1 ++ " to type " ++ valueToTypeFormat val2 ++ "!")
+evaluateUnequality (IsLessThanOrEqual exp1 exp2) env = 
+                    let val1 = (getValue $ evaluateExpression exp1 env)
+                        val2 = (getValue $ evaluateExpression exp2 env) in
+                        if checkValueTypeEquality val1 val2
+                        then Evaluated (CondValue (val1 <= val2)) env
+                        else error ("Cannot compare value with type " ++ valueToTypeFormat val1 ++ " to type " ++ valueToTypeFormat val2 ++ "!")
+evaluateUnequality (IsGreaterThan exp1 exp2) env = 
+                    let val1 = (getValue $ evaluateExpression exp1 env)
+                        val2 = (getValue $ evaluateExpression exp2 env) in
+                        if checkValueTypeEquality val1 val2
+                        then Evaluated (CondValue (val1 > val2)) env
+                        else error ("Cannot compare value with type " ++ valueToTypeFormat val1 ++ " to type " ++ valueToTypeFormat val2 ++ "!")
+evaluateUnequality (IsGreaterThanOrEqual exp1 exp2) env = 
+                    let val1 = (getValue $ evaluateExpression exp1 env)
+                        val2 = (getValue $ evaluateExpression exp2 env) in
+                        if checkValueTypeEquality val1 val2
+                        then Evaluated (CondValue (val1 >= val2)) env
+                        else error ("Cannot compare value with type " ++ valueToTypeFormat val1 ++ " to type " ++ valueToTypeFormat val2 ++ "!")
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the below code so if the two expressions had different datatypes,
 -- It gives an error in which the value of the expressions is specified
 evaluateExpression :: Expression -> Environment -> Evaluated
-evaluateExpression (ConditionalExpression cond exp1 exp2) env = if (getValue $ evaluateDisjunction cond env) == CondValue True
-                then evaluateExpression exp1 env
-                else evaluateExpression exp2 env
+evaluateExpression (ConditionalExpression cond exp1 exp2) env = 
+                    let val1 = (getValue $ evaluateExpression exp1 env)
+                        val2 = (getValue $ evaluateExpression exp2 env) in
+                        if checkValueTypeEquality val1 val2
+                        then 
+                            if (getValue $ evaluateDisjunction cond env) == CondValue True
+                            then evaluateExpression exp1 env
+                            else evaluateExpression exp2 env
+                        else error("Cannot resolve conditinoal statements values of type " ++ valueToTypeFormat val1 ++ " and " ++ valueToTypeFormat val2 ++ "!")
 evaluateExpression (EmptySum sum) env = evaluateSum sum env
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the below code so if the two expressions had different datatypes,
 -- It gives an error in which the value of the expressions is specified
 evaluateSum :: Sum -> Environment -> Evaluated
-evaluateSum (AddSum sum term) env = let val1 = (getValue $ evaluateSum sum env)
-                                        val2 = (getValue $ evaluateTerm term env) in
-                Evaluated (addValues val1 val2) env
-evaluateSum (SubtractSum sum term) env = let val1 = (getValue $ evaluateSum sum env)
-                                             val2 = (getValue $ evaluateTerm term env) in
-                Evaluated (subtractValues val1 val2) env
+evaluateSum (AddSum sum term) env = 
+                    let val1 = (getValue $ evaluateSum sum env)
+                        val2 = (getValue $ evaluateTerm term env) in
+                        if checkValueTypeEquality val1 val2 
+                        then Evaluated (addValues val1 val2) env
+                        else error("Cannot add values of type " ++ valueToTypeFormat val1 ++ " and " ++ valueToTypeFormat val2 ++ "!")
+evaluateSum (SubtractSum sum term) env = 
+                    let val1 = (getValue $ evaluateSum sum env)
+                        val2 = (getValue $ evaluateTerm term env) in
+                        if checkValueTypeEquality val1 val2
+                        then Evaluated (subtractValues val1 val2) env
+                        else error("Cannot subtract values of type " ++ valueToTypeFormat val1 ++ " and " ++ valueToTypeFormat val2 ++ "!")
 evaluateSum (EmptyTerm term) env = evaluateTerm term env
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the below code so if the two expressions had different datatypes,
 -- It gives an error in which the value of the expressions is specified
 evaluateTerm :: Term -> Environment -> Evaluated
-evaluateTerm (MultiplyTerm term factor) env = let val1 = (getValue $ evaluateTerm term env)
-                                                  val2 = (getValue $ evaluateFactor factor env) in
-                Evaluated (multiplyValues val1 val2) env
-evaluateTerm (DivideTerm term factor) env = let val1 = (getValue $ evaluateTerm term env)
-                                                val2 = (getValue $ evaluateFactor factor env) in
-                Evaluated (divideValues val1 val2) env
+evaluateTerm (MultiplyTerm term factor) env = 
+                    let val1 = (getValue $ evaluateTerm term env)
+                        val2 = (getValue $ evaluateFactor factor env) in
+                    if checkValueTypeEquality val1 val2 
+                    then Evaluated (multiplyValues val1 val2) env
+                    else error("Cannot multiply values of type " ++ valueToTypeFormat val1 ++ " and " ++ valueToTypeFormat val2 ++ "!")
+evaluateTerm (DivideTerm term factor) env = 
+                    let val1 = (getValue $ evaluateTerm term env)
+                        val2 = (getValue $ evaluateFactor factor env) in
+                    if checkValueTypeEquality val1 val2 
+                    then Evaluated (divideValues val1 val2) env
+                    else error("Cannot divide values of type " ++ valueToTypeFormat val1 ++ " and " ++ valueToTypeFormat val2 ++ "!")
 evaluateTerm (EmptyFactor factor) env = evaluateFactor factor env
 -- TODO: WRITE YOUR CODE HERE
 
@@ -487,7 +701,6 @@ evaluateVariable (NormalVariable var) env = Evaluated (searchEnv env var) env
 evaluateVariable (ListVariable var exp) env = Evaluated (listQuery (searchEnv env var) (getValue $ evaluateExpression exp env)) env
 
 
--- Add extendUpdateEnv to support recursive calls
 evaluateElement :: Element -> Environment -> Evaluated
 evaluateElement (VarElement variable) env = evaluateVariable variable env
 evaluateElement (FunctionElement var exps) env = let func = searchEnv env var
