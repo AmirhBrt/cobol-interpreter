@@ -10,32 +10,6 @@ data Evaluated
     = Evaluated Value Environment
     deriving Show;
 
-------------------------------------------------
------------------- ADDED CODE ------------------
-valueToTypeFormat :: Value -> String
-valueToTypeFormat (StrValue x) = "String"
-valueToTypeFormat (NumValue x) = "Number"
-valueToTypeFormat (StrList n l) = "[String]"
-valueToTypeFormat (NumList n l) = "[Number]"
-valueToTypeFormat (ParValue stmst) = "Paragraph"
-valueToTypeFormat (FunValue vars exp env) = "Function"
-valueToTypeFormat (CondValue x) = "Boolean"
-valueToTypeFormat (NothingValue) = "Null"
-valueToTypeFormat (EXIT_VALUE) = "EXIT"
-
-
-isValueNumValue :: Value -> Bool
-isValueNumValue (NumValue x) = True
-isValueNumValue _ = False
-
-
-isValueStrValue :: Value -> Bool
-isValueStrValue (StrValue x) = True
-isValueStrValue _ = False
-
------------------- ADDED CODE ------------------
-------------------------------------------------
-
 valueToString :: Value -> String
 valueToString (StrValue x) = x
 valueToString (NumValue x) = show x
@@ -84,10 +58,12 @@ expressionCount :: Expressions -> Integer
 expressionCount (SingleExpression exp) = 1
 expressionCount (MultiExpressions exps exp) = 1 + (expressionCount exps)
 
+-- You should change the function so if there are values with different types,
+-- It gives an error in which the datatypes of the two variables are specified
 addValues :: Value -> Value -> Value
 addValues (NumValue x) (NumValue y) = NumValue (x + y)
 addValues (StrValue x) (StrValue y) = StrValue (x ++ y)
-addValues x y = error("Can not add values of type " ++ valueToTypeFormat x ++ " and " ++ valueToTypeFormat y ++ " to each other!")
+addValues x y = error("Can not add values of type " ++ show x ++ " and " ++ show y ++ " to each other!")
 -- TODO: WRITE YOUR CODE HERE
 
 concatLists :: Value -> Value -> Value
@@ -98,28 +74,28 @@ concatLists (NumList x1 y1) (NumList x2 y2) = NumList (x1 + x2) (y1 ++ y2)
 -- It gives an error in which the datatypes of the two variables are specified
 subtractValues :: Value -> Value -> Value
 subtractValues (NumValue x) (NumValue y) = NumValue(x - y)
-subtractValues x y = error("Can not subtract values of type " ++ valueToTypeFormat x ++ " and " ++ valueToTypeFormat y ++ " from each other!")
+subtractValues x y = error("Can not subtract values of type " ++ show x ++ " and " ++ show y ++ " from each other!")
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the function so if there are values with different types,
 -- It gives an error in which the datatypes of the two variables are specified
 multiplyValues :: Value -> Value -> Value
 multiplyValues (NumValue x) (NumValue y) = NumValue (x * y)
-multiplyValues x y = error("Can not multiply values of type " ++ valueToTypeFormat x ++ " and " ++ valueToTypeFormat y ++ " by each other!")
+multiplyValues x y = error("Can not multiply values of type " ++ show x ++ " and " ++ show y ++ " by each other!")
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the function so if there are values with different types,
 -- It gives an error in which the datatypes of the two variables are specified
 divideValues :: Value -> Value -> Value
 divideValues (NumValue x) (NumValue y) = NumValue (x / y)
-divideValues x y = error("Can not divide values of type " ++ valueToTypeFormat x ++ " and " ++ valueToTypeFormat y ++ " by each other!")
+divideValues x y = error("Can not divide values of type " ++ show x ++ " and " ++ show y ++ " by each other!")
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the function so if there are values with different types,
 -- It gives an error in which the datatypes of the two variables are specified
 modValues :: Value -> Value -> Value
 modValues (NumValue x) (NumValue y) = NumValue (x - (y * fromIntegral (floor (x / y))))
-modValues x y = error("Can get mod from values of type " ++ valueToTypeFormat x ++ " and " ++ valueToTypeFormat y)
+modValues x y = error("Can get mod from values of type " ++ show x ++ " and " ++ show y)
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the function so if there are values with different types,
@@ -127,7 +103,7 @@ modValues x y = error("Can get mod from values of type " ++ valueToTypeFormat x 
 logicalOperationOnValues :: (Bool -> Bool -> Bool) -> Value -> Value -> Value
 logicalOperationOnValues op (CondValue x) (CondValue y) = CondValue (op x y)
 logicalOperationOnValues _ x y = 
-    error("Can not perform logical operation on values of type " ++ valueToTypeFormat x ++ " and " ++ valueToTypeFormat y)
+    error("Can not perform logical operation on values of type " ++ show x ++ " and " ++ show y)
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the function so if the index is not a number or the first value is not a list,
@@ -145,10 +121,8 @@ listQuery (NumList n (x:xs)) (NumValue k) = if (k < fromIntegral n) && (k >= 0) 
                                                     else listQuery (NumList (n-1) xs) (NumValue (k-1))
                                                 else error ("Index of a list cannot be " ++ show k ++ " becuase it's not an integer!")
                                             else error ("Index " ++ (show $ floor k) ++ " is out of bound for list with length " ++ show n ++ "!")
-listQuery (NumList n (x:xs)) k = error("Index must be of type Number. Current type of index is " ++ valueToTypeFormat k ++ "!")
-listQuery (StrList n (x:xs)) k = error("Index must be of type Number. Current type of index is " ++ valueToTypeFormat k ++ "!")
-listQuery x _ = error("Cannot perform any list query on type " ++ valueToTypeFormat x ++ "!")
 -- TODO: WRITE YOUR CODE HERE
+listQuery x _ = error ("Cannot perform any list query on a data of type " ++ show x)
 
 -- You should change the function so if the updated value is not matched with list datatype,
 -- It gives an error in which the expected datatype and the value of the expression is specified
@@ -167,36 +141,30 @@ listChange (NumList n (x:xs)) (NumValue k) (NumValue y) = if (k < fromIntegral n
                                                                 (listChange (NumList (n-1) xs) (NumValue (k-1)) (NumValue y))
                                                             else error ("Index of a list cannot be " ++ show k ++ " becuase it's not an integer!")
                                                         else error ("Index " ++ (show $ floor k) ++ " is out of bound for list with length " ++ show n ++ "!")
-listChange (NumList n (x:xs)) k y = error("Index must be of type Number. Current type of index is " ++ valueToTypeFormat k ++ "!")
-listChange (StrList n (x:xs)) k y = error("Index must be of type Number. Current type of index is " ++ valueToTypeFormat k ++ "!")
-listChange x _ _ = error("Cannot perform any list query on type " ++ valueToTypeFormat x ++ "!")
-
+listChange x _ _ = error ("Cannot perform any list query on a data of type " ++ show x)
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the function so if one of expressions have different datatype than the others,
 -- It gives an error in which the expected datatype and the value of the expression is specified
 sumOfExpressions :: Expressions -> Environment -> Value
-sumOfExpressions (SingleExpression exp) env = 
-                    getValue $ evaluateExpression exp env
-sumOfExpressions (MultiExpressions exps exp) env = 
-                    let first = (sumOfExpressions exps env)
-                        last = (getValue $ evaluateExpression exp env) in 
-                            if (checkValueTypeEquality first last)
-                            then (addValues first last)
-                            else error ("Can not add values of type " ++ valueToTypeFormat first ++ " and " ++ valueToTypeFormat last ++ " to each other!")
--- TODO: WRITE YOUR CODE HERE
+sumOfExpressions (SingleExpression exp) env = getValue $ evaluateExpression exp env
+sumOfExpressions (MultiExpressions exps exp) env = let 
+                                                    val1 = (getValue $ evaluateExpression exp env) 
+                                                    val2 = (sumOfExpressions exps env) in
+                                                    if (errorOnDifferenctTypes val1 val2)
+                                                    then addValues val2 val1 
+                                                    else error "Cannot continue here!"
 
 -- You should change the function so if one of expressions have different datatype than the others,
 -- It gives an error in which the expected datatype and the value of the expression is specified
 productOfExpressions :: Expressions -> Environment -> Value
-productOfExpressions (SingleExpression exp) env = 
-                    getValue $ evaluateExpression exp env
-productOfExpressions (MultiExpressions exps exp) env = 
-                    let first = (productOfExpressions exps env)
-                        last = (getValue $ evaluateExpression exp env) in 
-                            if (checkValueTypeEquality first last )
-                            then (multiplyValues first last)
-                            else error ("Can not multiply values of type " ++ valueToTypeFormat first ++ " and " ++ valueToTypeFormat last ++ " by each other!")
+productOfExpressions (SingleExpression exp) env = getValue $ evaluateExpression exp env
+productOfExpressions (MultiExpressions exps exp) env = let 
+                                                         val1 = (getValue $ evaluateExpression exp env) 
+                                                         val2 = (productOfExpressions exps env)
+                                                         in if (errorOnDifferenctTypes val1 val2)
+                                                            then (multiplyValues val1 val2)
+                                                            else error "Cannot continue here!"
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the below code so it can accept programs without a data division
@@ -225,7 +193,7 @@ evaluateEndStatement :: EndStatement -> Environment -> Evaluated
 evaluateEndStatement NoEnd env = Evaluated NothingValue (popEnv env "program-id")
 evaluateEndStatement (HasEnd name) env = if (searchEnv env "program-id") == StrValue name
                                          then evaluatePerformStatement (ParagraphPerform "main") env
-                                         else error ("There is no program called " ++ name ++ "!")
+                                         else error ("No program called " ++ name ++ "!")
 
 evaluateDataSection :: DataSection -> Environment -> Evaluated
 evaluateDataSection (DataSection data_declaration) = evaluateDataDeclarations data_declaration
@@ -240,34 +208,12 @@ evaluateDataDeclarations (Declarations data_dec var_dec) env =
                 evaluateVariableDeclaration var_dec (getEnv $ evaluateDataDeclarations data_dec env)
 evaluateDataDeclarations NoDeclaration env = Evaluated NothingValue env
 
--------------------------------------------
---------------- ADDED CODE ----------------
-evaluateMainParagraph :: ProcedureSection -> Environment -> Evaluated
-evaluateMainParagraph (SingleParagraph paragraph@(Paragraph name statements)) env = if name == "main" 
-                then evaluateStatements statements env
-                else Evaluated NothingValue env
-evaluateMainParagraph (MultiParagraph proc_section paragraph@(Paragraph name statements)) env =
-                if name == "main"
-                then evaluateStatements statements env
-                else evaluateMainParagraph proc_section env
-
-evaluateAllParagraphs :: ProcedureSection -> Environment -> Evaluated
-evaluateAllParagraphs (SingleParagraph paragraph) env =
-                evaluateParagraph paragraph env
-evaluateAllParagraphs (MultiParagraph proc_section paragraph) env =
-                let val = evaluateAllParagraphs proc_section env
-                in  evaluateParagraph paragraph (getEnv val)
---------------- ADDED CODE ----------------
--------------------------------------------
-
 evaluateParagraph :: Paragraph -> Environment -> Evaluated
-evaluateParagraph (Paragraph name statements) env = Evaluated NothingValue (extendEnv env name (ParValue statements))
+evaluateParagraph (Paragraph name statements) env = 
+                Evaluated NothingValue (extendEnv env name (ParValue statements))
 
 -- You should change the below code so if the default value didn't match the datatype,
 -- It gives an error in which the expected datatype and the default value provided for it is specified
-
-expectStrType (StrValue x) = (StrValue x)
-expectStrType t = error ("expected String Value But Got " ++ show t ++ " Instead")
 
 evaluateVariableDeclaration :: VariableDeclaration -> Environment -> Evaluated
 evaluateVariableDeclaration (VarDeclaration 0 name SignedNumber NoDefault) env = 
@@ -280,15 +226,16 @@ evaluateVariableDeclaration (VarDeclaration 0 name SignedNumber (HasDefault exp)
                 error ("Size of the variable " ++ name ++ " cannot be zero!")
 evaluateVariableDeclaration (VarDeclaration 1 name SignedNumber (HasDefault exp)) env =
                 let val = (getValue $ evaluateExpression exp env) in
-                    if isValueNumValue val
+                    if (errorOnDifferenctTypes val (NumValue 0))
                     then Evaluated NothingValue (extendEnv env name val)
-                    else error ("Expected number value but received " ++ valueToTypeFormat val ++ " instead!")
+                    else error "Cannot continue here!"
 evaluateVariableDeclaration (VarDeclaration size name SignedNumber (HasDefault exp)) env =
                 let val = (getValue $ evaluateExpression exp env) in
-                    if isValueNumValue val
-                    then Evaluated NothingValue (extendEnv env name (NumList size (floatList size (valueToNumber val))))
-                    else error ("Expected number value but received " ++ valueToTypeFormat val ++ " instead!")
-evaluateVariableDeclaration (VarDeclaration 0 name AlphanumericString NoDefault) env = error ("Size of the variable " ++ name ++ " cannot be zero!")
+                    if (errorOnDifferenctTypes val (NumValue 0))
+                    then Evaluated NothingValue (extendEnv env name (NumList size (floatList size (valueToNumber $ val))))
+                    else error "Cannot continue here!"
+evaluateVariableDeclaration (VarDeclaration 0 name AlphanumericString NoDefault) env = 
+                error ("Size of the variable " ++ name ++ " cannot be zero!")
 evaluateVariableDeclaration (VarDeclaration 1 name AlphanumericString NoDefault) env =
                 Evaluated NothingValue (extendEnv env name (StrValue ""))
 evaluateVariableDeclaration (VarDeclaration size name AlphanumericString NoDefault) env =
@@ -297,14 +244,14 @@ evaluateVariableDeclaration (VarDeclaration 0 name AlphanumericString (HasDefaul
                 error ("Size of the variable " ++ name ++ " cannot be zero!")
 evaluateVariableDeclaration (VarDeclaration 1 name AlphanumericString (HasDefault exp)) env =
                 let val = (getValue $ evaluateExpression exp env) in
-                    if isValueStrValue val
+                    if (errorOnDifferenctTypes val (StrValue ""))
                     then Evaluated NothingValue (extendEnv env name val)
-                    else error ("Expected string value but received " ++ valueToTypeFormat val ++ " instead!")
+                    else error "Cannot continue here!"
 evaluateVariableDeclaration (VarDeclaration size name AlphanumericString (HasDefault exp)) env =
-                let val = (getValue $ evaluateExpression exp env) in 
-                    if isValueStrValue val
+                let val = (getValue $ evaluateExpression exp env) in
+                    if (errorOnDifferenctTypes val (StrValue ""))
                     then Evaluated NothingValue (extendEnv env name (StrList size (stringList size (valueToString $ val))))
-                    else error ("Expected string value but received " ++ valueToTypeFormat val ++ " instead!")
+                    else error "Cannot continue here!"
 -- TODO: WRITE YOUR CODE HERE
 
 evaluateStatements :: Statements -> Environment -> Evaluated
@@ -483,14 +430,14 @@ evaluateComparison (GreaterThanOrEqualComparison uneq) env = evaluateUnequality 
 evaluateEquality :: Equality -> Environment -> Evaluated
 evaluateEquality (IsEq exp1 exp2) env = let val1 = (getValue $ evaluateExpression exp1 env)
                                             val2 = (getValue $ evaluateExpression exp2 env) in
-                                                if (checkValueTypeEquality val1 val2)
+                                                if (errorOnDifferenctTypes val1 val2)
                                                     then Evaluated (CondValue (val1 == val2)) env
-                                                    else error ("Cannot compare value with type " ++ valueToTypeFormat val1 ++ " to type " ++ valueToTypeFormat val2 ++ "!")                                  
+                                                    else error "Cannot continue here!"
 evaluateEquality (IsNotEq exp1 exp2) env = let val1 = (getValue $ evaluateExpression exp1 env)
                                                val2 = (getValue $ evaluateExpression exp2 env) in
-                                                if (checkValueTypeEquality val1 val2)
+                                                if (errorOnDifferenctTypes val1 val2)
                                                     then Evaluated (CondValue (val1 /= val2)) env
-                                                    else error ("Cannot compare value with type " ++ valueToTypeFormat val1 ++ " to type " ++ valueToTypeFormat val2 ++ "!")
+                                                    else error "Cannot continue here!"
 -- TODO: WRITE YOUR CODE HERE
 
 -- You should change the below code so if the two expressions had different datatypes,
@@ -498,65 +445,68 @@ evaluateEquality (IsNotEq exp1 exp2) env = let val1 = (getValue $ evaluateExpres
 evaluateUnequality :: Unequality -> Environment -> Evaluated
 evaluateUnequality (IsLessThan exp1 exp2) env = let val1 = (getValue $ evaluateExpression exp1 env)
                                                     val2 = (getValue $ evaluateExpression exp2 env) in
-                                                        if (checkValueTypeEquality val1 val2)
-                                                        then Evaluated (CondValue (val1 < val2)) env 
-                                                        else error ("Cannot compare value with type " ++ valueToTypeFormat val1 ++ " to type " ++ valueToTypeFormat val2 ++ "!")
+                                                        if (errorOnDifferenctTypes val1 val2)
+                                                    then Evaluated (CondValue (val1 < val2)) env 
+                                                    else error "Cannot continue here!"
                 
 evaluateUnequality (IsLessThanOrEqual exp1 exp2) env = let val1 = (getValue $ evaluateExpression exp1 env)
                                                            val2 = (getValue $ evaluateExpression exp2 env) in
-                                                            if (checkValueTypeEquality val1 val2)
-                                                            then Evaluated (CondValue (val1 <= val2)) env
-                                                            else error ("Cannot compare value with type " ++ valueToTypeFormat val1 ++ " to type " ++ valueToTypeFormat val2 ++ "!")
+                                                            if (errorOnDifferenctTypes val1 val2)
+                                                    then Evaluated (CondValue (val1 <= val2)) env
+                                                    else error "Cannot continue here!"
 
 evaluateUnequality (IsGreaterThan exp1 exp2) env = let val1 = (getValue $ evaluateExpression exp1 env)
                                                        val2 = (getValue $ evaluateExpression exp2 env) in
-                                                        if (checkValueTypeEquality val1 val2)
-                                                        then Evaluated (CondValue (val1 > val2)) env
-                                                        else error ("Cannot compare value with type " ++ valueToTypeFormat val1 ++ " to type " ++ valueToTypeFormat val2 ++ "!")
+                                                        if (errorOnDifferenctTypes val1 val2)
+                                                    then Evaluated (CondValue (val1 > val2)) env
+                                                    else error "Cannot continue here!"
                 
 evaluateUnequality (IsGreaterThanOrEqual exp1 exp2) env = let val1 = (getValue $ evaluateExpression exp1 env)
                                                               val2 = (getValue $ evaluateExpression exp2 env) in
-                                                                if (checkValueTypeEquality val1 val2)
-                                                                then Evaluated (CondValue (val1 >= val2)) env
-                                                                else error ("Cannot compare value with type " ++ valueToTypeFormat val1 ++ " to type " ++ valueToTypeFormat val2 ++ "!")
+                                                                if (errorOnDifferenctTypes val1 val2)
+                                                    then Evaluated (CondValue (val1 >= val2)) env
+                                                    else error "Cannot continue here!"
                 
 -- TODO: WRITE YOUR CODE HERE
+
+evaluateExpression :: Expression -> Environment -> Evaluated
+evaluateExpression (ConditionalExpression cond exp1 exp2) env = if (getValue $ evaluateDisjunction cond env) == CondValue True
+                then evaluateExpression exp1 env
+                else evaluateExpression exp2 env
+evaluateExpression (EmptySum sum) env = evaluateSum sum env
 
 
 -- You should change the below code so if the two expressions had different datatypes,
 -- It gives an error in which the value of the expressions is specified
-evaluateExpression :: Expression -> Environment -> Evaluated
-evaluateExpression (ConditionalExpression cond exp1 exp2) env = 
-                    let val1 = (getValue $ evaluateExpression exp1 env)
-                        val2 = (getValue $ evaluateExpression exp2 env) in
-                            if checkValueTypeEquality val1 val2
-                            then 
-                                if (getValue $ evaluateDisjunction cond env) == CondValue True
-                                then evaluateExpression exp1 env
-                                else evaluateExpression exp2 env
-                            else error("Cannot resolve conditional statements with two values of types " ++ valueToTypeFormat val1 ++ " and " ++ valueToTypeFormat val2 ++ "!")
-evaluateExpression (EmptySum sum) env = evaluateSum sum env
-
--- TODO: WRITE YOUR CODE HERE
-
 evaluateSum :: Sum -> Environment -> Evaluated
 evaluateSum (AddSum sum term) env = let val1 = (getValue $ evaluateSum sum env)
                                         val2 = (getValue $ evaluateTerm term env) in
-                                                Evaluated (addValues val1 val2) env 
+                                            if (errorOnDifferenctTypes val1 val2)
+                                                then Evaluated (addValues val1 val2) env 
+                                                else error "Cannot continue here!"
 evaluateSum (SubtractSum sum term) env = let val1 = (getValue $ evaluateSum sum env)
                                              val2 = (getValue $ evaluateTerm term env) in
-                                                Evaluated (subtractValues val1 val2) env 
-                
+                                                if (errorOnDifferenctTypes val1 val2)
+                                                    then Evaluated (subtractValues val1 val2) env 
+                                                    else error "Cannot continue here!"
 evaluateSum (EmptyTerm term) env = evaluateTerm term env
+-- TODO: WRITE YOUR CODE HERE
 
+-- You should change the below code so if the two expressions had different datatypes,
+-- It gives an error in which the value of the expressions is specified
 evaluateTerm :: Term -> Environment -> Evaluated
 evaluateTerm (MultiplyTerm term factor) env = let val1 = (getValue $ evaluateTerm term env)
                                                   val2 = (getValue $ evaluateFactor factor env) in
-                Evaluated (multiplyValues val1 val2) env
+                                                    if (errorOnDifferenctTypes val1 val2)
+                                                        then Evaluated (multiplyValues val1 val2) env
+                                                        else error "Cannot continue here!"
 evaluateTerm (DivideTerm term factor) env = let val1 = (getValue $ evaluateTerm term env)
                                                 val2 = (getValue $ evaluateFactor factor env) in
-                Evaluated (divideValues val1 val2) env
+                                                    if (errorOnDifferenctTypes val1 val2)
+                                                        then Evaluated (divideValues val1 val2) env
+                                                        else error "Cannot continue here!"
 evaluateTerm (EmptyFactor factor) env = evaluateFactor factor env
+-- TODO: WRITE YOUR CODE HERE
 
 evaluateFactor :: Factor -> Environment -> Evaluated
 evaluateFactor (PositiveFactor factor) env = evaluateFactor factor env

@@ -17,15 +17,22 @@ data Value
 ---------------------------------------------
 ----------------- ADDED CODE ----------------
 checkValueTypeEquality :: Value -> Value -> Bool
-checkValueTypeEquality (NumValue x) (NumValue y)       = True
-checkValueTypeEquality (StrValue x) (StrValue y)       = True
-checkValueTypeEquality (StrList x1 x2) (StrList y1 y2) = True
-checkValueTypeEquality (NumList x1 x2) (NumList y1 y2) = True
-checkValueTypeEquality (CondValue x) (CondValue y)     = True
-checkValueTypeEquality exp1 exp2                       = False
+checkValueTypeEquality (NumValue v1) (NumValue v2)    = True
+checkValueTypeEquality (StrValue v1) (StrValue v2)    = True
+checkValueTypeEquality (NumList s v1) (NumList s1 v2) = True
+checkValueTypeEquality (StrList s v1) (StrList s1 v2) = True
+checkValueTypeEquality (CondValue v1) (CondValue v2)  = True
+checkValueTypeEquality t1 t2                          = False
+
+errorOnDifferenctTypes :: Value -> Value -> Bool
+errorOnDifferenctTypes (NumValue v1) (NumValue v2)    = True
+errorOnDifferenctTypes (StrValue v1) (StrValue v2)    = True
+errorOnDifferenctTypes (NumList s v1) (NumList s1 v2) = True
+errorOnDifferenctTypes (StrList s v1) (StrList s1 v2) = True
+errorOnDifferenctTypes (CondValue v1) (CondValue v2)  = True
+errorOnDifferenctTypes v1 v2 = error ("Cannot assign a variable with type " ++ show v1 ++ " an expression with type " ++ show v2)
 ----------------- ADDED CODE ----------------
 ---------------------------------------------
-
 
 data Environment = Environment [String] [Value] deriving (Show, Eq, Ord)
 
@@ -46,19 +53,17 @@ extendUpdateEnv (Environment x []) key info = Environment (key:x) [info]
 extendUpdateEnv (Environment (x:xs) (y:ys)) key info = if x == key then Environment (x:xs) (info:ys)
                                                  else joinEnv (Environment [x] [y]) (extendUpdateEnv (Environment xs ys) key info)
 
----------------------------------------------
------------------ ADDED CODE ----------------
 typedExtendUpdateEnv :: Environment -> String -> Value -> Environment
 typedExtendUpdateEnv (Environment [] x) key info = Environment [key] (info:x)
 typedExtendUpdateEnv (Environment x []) key info = Environment (key:x) [info]
 typedExtendUpdateEnv (Environment (x:xs) (y:ys)) key info = 
-                            if x == key then 
-                                if checkValueTypeEquality info y 
-                                then Environment (x:xs) (info:ys)
-                                else error ("Assigning a new type " ++ show info ++ " to variable " ++ key ++ " with type " ++ show y ++ "!")
-                            else joinEnv (Environment [x] [y]) (updateEnv (Environment xs ys) key info)
------------------ ADDED CODE ----------------
----------------------------------------------
+                                                if x == key 
+                                                then 
+                                                    if (checkValueTypeEquality info y) 
+                                                    then Environment (x:xs) (info:ys) 
+                                                    else error ("Trying To Assign " ++ show info ++ " to variable of type same as " ++ show y)
+                                                else joinEnv (Environment [x] [y]) (extendUpdateEnv (Environment xs ys) key info)
+
 
 updateEnv :: Environment -> String -> Value -> Environment
 updateEnv (Environment [] x) key info = error ("Assignment to variable " ++ key ++ " before declaration!")
