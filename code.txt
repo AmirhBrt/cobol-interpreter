@@ -1,5 +1,12 @@
 IDENTIFICATION DIVISION.
     PROGRAM-ID. myProgram
+DATA DIVISION.
+    WORKING-STORAGE SECTION.
+        01 x PIC S9 VALUE -1.
+        01 r PIC S9.
+        05 y PIC A.
+        02 result PIC S9 VALUE 1.
+        10 array PIC S9.
 PROCEDURE DIVISION.
 
     main.
