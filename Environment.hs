@@ -13,6 +13,20 @@ data Value
     | EXIT_VALUE
     deriving (Show, Eq, Ord)
 
+
+---------------------------------------------
+----------------- ADDED CODE ----------------
+checkValueTypeEquality :: Value -> Value -> Bool
+checkValueTypeEquality (NumValue x) (NumValue y)       = True
+checkValueTypeEquality (StrValue x) (StrValue y)       = True
+checkValueTypeEquality (StrList x1 x2) (StrList y1 y2) = True
+checkValueTypeEquality (NumList x1 x2) (NumList y1 y2) = True
+checkValueTypeEquality (CondValue x) (CondValue y)     = True
+checkValueTypeEquality exp1 exp2                       = False
+----------------- ADDED CODE ----------------
+---------------------------------------------
+
+
 data Environment = Environment [String] [Value] deriving (Show, Eq, Ord)
 
 initEnv :: Environment
@@ -31,6 +45,20 @@ extendUpdateEnv (Environment [] x) key info = Environment [key] (info:x)
 extendUpdateEnv (Environment x []) key info = Environment (key:x) [info]
 extendUpdateEnv (Environment (x:xs) (y:ys)) key info = if x == key then Environment (x:xs) (info:ys)
                                                  else joinEnv (Environment [x] [y]) (extendUpdateEnv (Environment xs ys) key info)
+
+---------------------------------------------
+----------------- ADDED CODE ----------------
+typedExtendUpdateEnv :: Environment -> String -> Value -> Environment
+typedExtendUpdateEnv (Environment [] x) key info = Environment [key] (info:x)
+typedExtendUpdateEnv (Environment x []) key info = Environment (key:x) [info]
+typedExtendUpdateEnv (Environment (x:xs) (y:ys)) key info = 
+                            if x == key then 
+                                if checkValueTypeEquality info y 
+                                then Environment (x:xs) (info:ys)
+                                else error ("Assigning a new type " ++ show info ++ " to variable " ++ key ++ " with type " ++ show y ++ "!")
+                            else joinEnv (Environment [x] [y]) (updateEnv (Environment xs ys) key info)
+----------------- ADDED CODE ----------------
+---------------------------------------------
 
 updateEnv :: Environment -> String -> Value -> Environment
 updateEnv (Environment [] x) key info = error ("Assignment to variable " ++ key ++ " before declaration!")
